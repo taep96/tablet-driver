@@ -38,7 +38,6 @@ Successfully connected to:
     // TODO: buffer length = report length (returned by tablet.read)
     let mut buf = [0u8; 10];
 
-    // TODO: Read at devide frequency
     loop {
         // Get data report
         tablet
@@ -52,9 +51,33 @@ Successfully connected to:
             data_string.push_str(&(u.to_string() + "\t"));
         }
 
-        // Clear last line and print
+        // Clear last iterations output
         print!("{}[2K", 27 as char);
-        print!("\r{}", data_string);
+        print!("{}[A", 27 as char);
+        print!("{}[2K", 27 as char);
+
+        // Raw usb data
+        println!("\r{}", data_string);
+
+        // Parse pen coordinates
+        let (pen_x, pen_y) = (
+            i16::from_be_bytes([buf[3], buf[2]]) as f32,
+            i16::from_be_bytes([buf[5], buf[4]]) as f32,
+        );
+
+        // Remap to screen coordinates
+        let (screen_x, screen_y) = (
+            (pen_x / (15200.0 / 1920.0)) as i16,
+            (pen_y / (9500.0 / 1080.0)) as i16,
+        );
+
+        // Cursor coordinates on screen
+        print!("{}x{}\t", screen_x, screen_y);
+
+        // Pen's coordinbates on tablet
+        print!("{}x{}", pen_x, pen_y);
+
+        // Flush to prevent lag
         std::io::stdout().flush().expect("Failed to flush");
     }
 }
