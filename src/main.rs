@@ -60,10 +60,14 @@ Successfully connected to:
         println!("\r{}", data_string);
 
         // Parse pen coordinates
-        let (pen_x, pen_y) = (
+        let (mut pen_x, mut pen_y) = (
             i16::from_be_bytes([buf[3], buf[2]]) as f32,
             i16::from_be_bytes([buf[5], buf[4]]) as f32,
         );
+
+        // Area position/offset
+        pen_x -= 2000.0;
+        pen_y -= 2000.0;
 
         // Remap to screen coordinates
         let (screen_x, screen_y) = (
