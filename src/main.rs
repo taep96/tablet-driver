@@ -1,6 +1,9 @@
 use hidapi::HidApi;
 use std::io::Write;
 
+use crossterm::{cursor, execute, terminal};
+use std::io::stdout;
+
 // CTL-472
 const VID: u16 = 0x056a;
 const PID: u16 = 0x037a;
@@ -17,6 +20,7 @@ Successfully connected to:
   Manufacturer: {}
   Product: {}
   Serial Number: {}
+
 ",
         tablet
             .get_manufacturer_string()
@@ -35,6 +39,8 @@ Successfully connected to:
             .expect("HidApi: Failed to get serial number"),
     );
 
+    let mut stdout = stdout();
+
     // TODO: buffer length = report length (returned by tablet.read)
     let mut buf = [0u8; 10];
 
@@ -52,12 +58,16 @@ Successfully connected to:
         }
 
         // Clear last iterations output
-        print!("{}[2K", 27 as char);
-        print!("{}[A", 27 as char);
-        print!("{}[2K", 27 as char);
+        execute!(
+            stdout,
+            terminal::Clear(terminal::ClearType::CurrentLine),
+            cursor::MoveToPreviousLine(1),
+            terminal::Clear(terminal::ClearType::CurrentLine),
+        )
+        .expect("Crossterm: Failed to clear terminal");
 
         // Raw usb data
-        println!("\r{}", data_string);
+        println!("{}", data_string);
 
         // Parse pen coordinates
         let (mut pen_x, mut pen_y) = (
@@ -82,6 +92,6 @@ Successfully connected to:
         print!("{}x{}", pen_x, pen_y);
 
         // Flush to prevent lag
-        std::io::stdout().flush().expect("Failed to flush");
+        stdout.flush().expect("Failed to flush");
     }
 }
