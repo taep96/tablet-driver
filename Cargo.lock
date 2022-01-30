@@ -46,6 +46,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "fprint"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fee463e996bbe8b430731204cc5e081d5079983d9d19ae3bfcd7cd2a1843484"
+
+[[package]]
 name = "hidapi"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -207,6 +213,7 @@ name = "tablet-driver"
 version = "0.1.0"
 dependencies = [
  "crossterm",
+ "fprint",
  "hidapi",
 ]
 

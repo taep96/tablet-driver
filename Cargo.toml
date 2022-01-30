@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 crossterm = "0.22.1"
+fprint = "0.1.1"
 hidapi = "1.3.2"

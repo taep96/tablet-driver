@@ -1,7 +1,7 @@
 use hidapi::HidApi;
-use std::io::Write;
 
 use crossterm::{cursor, execute, terminal};
+use fprint::fprint;
 use std::io::stdout;
 
 // CTL-472
@@ -86,12 +86,9 @@ Successfully connected to:
         );
 
         // Cursor coordinates on screen
-        print!("{}x{}\t", screen_x, screen_y);
+        fprint!("{}x{}\t", screen_x, screen_y);
 
         // Pen's coordinbates on tablet
-        print!("{}x{}", pen_x, pen_y);
-
-        // Flush to prevent lag
-        stdout.flush().expect("Failed to flush");
+        fprint!("{}x{}", pen_x, pen_y);
     }
 }
