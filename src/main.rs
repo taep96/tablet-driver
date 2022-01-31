@@ -1,4 +1,5 @@
 use hidapi::HidApi;
+use xrandr::XHandle;
 
 use crossterm::{cursor, execute, terminal};
 use fprint::fprint;
@@ -7,17 +8,19 @@ use fprint::fprint;
 const VID: u16 = 0x056a;
 const PID: u16 = 0x037a;
 
+const TABLET_WIDTH: f32 = 15200.0;
+const TABLET_HEIGHT: f32 = 9500.0;
+
 fn main() {
     let api = HidApi::new().expect("HidApi: Failed to create API instance");
     let tablet = api.open(VID, PID).expect("HidApi: Failed to open tablet");
 
+    println!("Successfully connected to:\n");
     println!(
-        "\
-Successfully connected to:
-  Manufacturer: {}
-  Product: {}
-  Serial Number: {}
-
+        "  Tablet:
+    Manufacturer: {}
+    Product: {}
+    Serial Number: {}
 ",
         tablet
             .get_manufacturer_string()
@@ -36,10 +39,35 @@ Successfully connected to:
             .expect("HidApi: Failed to get serial number"),
     );
 
+    // TODO: All monitors
+    let monitor = &XHandle::open().unwrap().monitors().unwrap()[0];
+    println!(
+        "  Monitor(s):
+    Name: {}
+    Is primary?: {}
+    Is automatic?: {}
+    Start: {}x{}px
+    Size px: {}x{}px
+    Size mm: {}x{}mm",
+        monitor.name,
+        monitor.is_primary,
+        monitor.is_automatic,
+        monitor.x,
+        monitor.y,
+        monitor.width_px,
+        monitor.height_px,
+        monitor.width_mm,
+        monitor.height_mm
+    );
+    println!("\n");
+
     let mut stdout = std::io::stdout();
 
     // TODO: buffer length = report length (returned by tablet.read)
     let mut buf = [0u8; 10];
+
+    let calculated_x = TABLET_WIDTH / monitor.width_px as f32;
+    let calculated_y = TABLET_HEIGHT / monitor.height_px as f32;
 
     loop {
         tablet
@@ -62,22 +90,22 @@ Successfully connected to:
         .expect("Crossterm: Failed to clear terminal");
 
         // Parse pen coordinates
-        let (pen_x, pen_y) = (
+        let (pen_pos_x, pen_pos_y) = (
             u16::from_be_bytes([buf[3], buf[2]]) as f32,
             u16::from_be_bytes([buf[5], buf[4]]) as f32,
         );
 
-        // Convert pen coordinates
-        let (screen_x, screen_y) = (
-            ((pen_x - 2000.0) // - x_offset
-            / (15200.0 / 1920.0)) as u16,
-            ((pen_y - 2000.0) // - y_offset
-            / (9500.0 / 1080.0)) as u16,
+        // Convert pen coordinates to screen
+        // (pen_coords - area_offset)/ (tablet_max / screen_max)
+        let (screen_pos_x, screen_pos_y) = (
+            ((pen_pos_x) / calculated_x) as u16,
+            ((pen_pos_y) / calculated_y) as u16,
         );
 
+        // TODO: Elastic tabstops
         println!("{}", data_string);
 
-        fprint!("{}x{}\t", screen_x, screen_y);
-        fprint!("{}x{}", pen_x, pen_y);
+        fprint!("{}x{}\t", pen_pos_x, pen_pos_y);
+        fprint!("{}x{}", screen_pos_x, screen_pos_y);
     }
 }
